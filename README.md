@@ -55,6 +55,11 @@ src/
 
 For comprehensive documentation, see [claude.md](./claude.md)
 
+## Demo
+![ScreenRecording2025-10-17at18 00 40-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/3a9798fd-c7ef-4fcd-b31d-71daa9e5a737)
+
+
+
 ## Technology Stack
 
 - **Frontend**: React 18 + TypeScript
