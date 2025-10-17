@@ -1,12 +1,13 @@
 import { useEffect, useMemo } from 'react'
 import { MapContainer as LeafletMap, TileLayer, GeoJSON, ZoomControl, useMap } from 'react-leaflet'
+import MarkerClusterGroup from 'react-leaflet-cluster'
 import { useGeoJSONStore } from '@/store/geojson-store'
 import { applyFilters } from '@/lib/utils/filter-helpers'
-import { MeasurementControl } from './MeasurementControl'
 import { MeasurementLayer } from './MeasurementLayer'
-import { MeasurementResults } from './MeasurementResults'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import type { FeatureCollection } from 'geojson'
 
 // Fix Leaflet default marker icon issue
@@ -97,23 +98,43 @@ export function MapContainer() {
     layers,
     filterCriteria,
     setSelectedFeature,
+    selectedFeature,
     selectionMode,
     selectedFeatures,
     toggleSelectedFeature,
   } = useGeoJSONStore()
 
-  // Apply filters to each layer
+  // Apply filters to each layer and separate points from other geometries
   const filteredLayers = useMemo(() => {
     return layers
       .filter((layer) => layer.visible)
       .map((layer) => {
         const filteredFeatures = applyFilters(layer.data.features, filterCriteria)
+
+        // Separate points from other geometry types for clustering
+        const pointFeatures = filteredFeatures.filter(
+          (f) => f.geometry?.type === 'Point' || f.geometry?.type === 'MultiPoint'
+        )
+        const nonPointFeatures = filteredFeatures.filter(
+          (f) => f.geometry?.type !== 'Point' && f.geometry?.type !== 'MultiPoint'
+        )
+
         return {
           ...layer,
           data: {
             ...layer.data,
             features: filteredFeatures,
           } as FeatureCollection,
+          pointData: {
+            type: 'FeatureCollection' as const,
+            features: pointFeatures,
+          },
+          nonPointData: {
+            type: 'FeatureCollection' as const,
+            features: nonPointFeatures,
+          },
+          shouldCluster: pointFeatures.length > 100, // Auto-enable clustering for >100 points
+          useCanvas: filteredFeatures.length > 1000, // Use canvas renderer for >1000 features
         }
       })
   }, [layers, filterCriteria])
@@ -134,65 +155,161 @@ export function MapContainer() {
         <FitBoundsToLayers />
         <FlyToFeatureHandler />
 
-        {filteredLayers.map((layer) => (
-          <GeoJSON
-            key={`${layer.id}-${filterCriteria.searchText}-${filterCriteria.geometryTypes.join(',')}-${filterCriteria.propertyFilters.length}`}
-            data={layer.data}
-            style={(feature) => {
-              // Check if feature is in selected features array
-              const isSelected = selectedFeatures.some(
-                (sf) =>
-                  sf.layerId === layer.id &&
-                  (sf.feature.id === feature?.id || sf.feature === feature)
-              )
+        {filteredLayers.map((layer) => {
+          const getFeatureStyle = (feature: any) => {
+            // Check if feature is in selected features array (multiple selection)
+            const isInMultiSelection = selectedFeatures.some(
+              (sf) =>
+                sf.layerId === layer.id &&
+                (sf.feature.id === feature?.id || sf.feature === feature)
+            )
 
-              if (isSelected) {
-                return {
-                  ...layer.style,
-                  color: '#2563eb',
-                  fillColor: '#3b82f6',
-                  weight: 4,
-                  fillOpacity: 0.4,
-                }
+            // Check if this is the single selected feature
+            const isSingleSelected =
+              selectedFeature?.layerId === layer.id &&
+              (selectedFeature?.feature.id === feature?.id ||
+                selectedFeature?.feature === feature)
+
+            const isSelected = isInMultiSelection || isSingleSelected
+
+            if (isSelected) {
+              return {
+                ...layer.style,
+                color: '#2563eb',
+                fillColor: '#3b82f6',
+                weight: 4,
+                fillOpacity: 0.4,
               }
+            }
 
-              return layer.style
-            }}
-            onEachFeature={(feature, leafletLayer) => {
-              leafletLayer.on('click', (e) => {
-                // Prevent event from propagating to map
-                L.DomEvent.stopPropagation(e)
+            return layer.style
+          }
 
-                const selectedFeatureObj = { feature, layerId: layer.id }
+          const pointToLayer = (feature: any, latlng: L.LatLng) => {
+            const style = getFeatureStyle(feature)
+            const markerType = style.markerType || 'circle'
 
-                if (selectionMode === 'single') {
-                  setSelectedFeature(selectedFeatureObj)
-                } else if (selectionMode === 'multiple') {
-                  toggleSelectedFeature(selectedFeatureObj)
-                } else {
-                  // Default behavior for other modes
-                  setSelectedFeature(selectedFeatureObj)
-                }
+            // Check if selected for styling
+            const isInMultiSelection = selectedFeatures.some(
+              (sf) =>
+                sf.layerId === layer.id &&
+                (sf.feature.id === feature?.id || sf.feature === feature)
+            )
+            const isSingleSelected =
+              selectedFeature?.layerId === layer.id &&
+              (selectedFeature?.feature.id === feature?.id ||
+                selectedFeature?.feature === feature)
+            const isSelected = isInMultiSelection || isSingleSelected
+
+            if (markerType === 'circle') {
+              return L.circleMarker(latlng, {
+                radius: isSelected ? (style.markerRadius || 8) + 2 : (style.markerRadius || 8),
+                color: isSelected ? '#2563eb' : (style.markerColor || style.color || '#1e40af'),
+                fillColor: isSelected ? '#3b82f6' : (style.markerFillColor || style.fillColor || '#3b82f6'),
+                fillOpacity: style.markerFillOpacity ?? style.fillOpacity ?? 0.6,
+                weight: isSelected ? 3 : (style.markerWeight || style.weight || 2),
+                opacity: style.markerOpacity ?? style.opacity ?? 1,
               })
+            } else if (markerType === 'icon' && style.markerIconUrl) {
+              const icon = L.icon({
+                iconUrl: style.markerIconUrl,
+                iconSize: style.markerIconSize || [25, 41],
+                iconAnchor: style.markerIconAnchor || [12, 41],
+                popupAnchor: [1, -34],
+                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                shadowSize: [41, 41],
+              })
+              return L.marker(latlng, { icon })
+            } else if (markerType === 'divIcon') {
+              const icon = L.divIcon({
+                html: style.markerHtml || '<div style="background-color: #3b82f6; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+                className: style.markerClassName || 'custom-marker',
+                iconSize: style.markerIconSize || [12, 12],
+                iconAnchor: style.markerIconAnchor || [6, 6],
+              })
+              return L.marker(latlng, { icon })
+            }
 
-              // Add popup with properties
-              if (feature.properties) {
-                const popupContent = Object.entries(feature.properties)
-                  .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
-                  .join('<br/>')
-                leafletLayer.bindPopup(popupContent)
+            // Default to circle marker
+            return L.circleMarker(latlng, {
+              radius: 8,
+              color: '#1e40af',
+              fillColor: '#3b82f6',
+              fillOpacity: 0.6,
+              weight: 2,
+            })
+          }
+
+          const handleFeatureClick = (feature: any, leafletLayer: L.Layer) => {
+            leafletLayer.on('click', (e) => {
+              // Prevent event from propagating to map
+              L.DomEvent.stopPropagation(e)
+
+              const selectedFeatureObj = { feature, layerId: layer.id }
+
+              if (selectionMode === 'single') {
+                setSelectedFeature(selectedFeatureObj)
+              } else if (selectionMode === 'multiple') {
+                toggleSelectedFeature(selectedFeatureObj)
+              } else {
+                // Default behavior for other modes
+                setSelectedFeature(selectedFeatureObj)
               }
-            }}
-          />
-        ))}
+            })
+
+            // Add popup with properties
+            if (feature.properties) {
+              const popupContent = Object.entries(feature.properties)
+                .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+                .join('<br/>')
+              leafletLayer.bindPopup(popupContent)
+            }
+          }
+
+          return (
+            <>
+              {/* Render non-point geometries (lines, polygons) with standard rendering */}
+              {layer.nonPointData.features.length > 0 && (
+                <GeoJSON
+                  key={`${layer.id}-nonpoint-${filterCriteria.searchText}-${filterCriteria.geometryTypes.join(',')}-${filterCriteria.propertyFilters.length}-${selectedFeature?.layerId === layer.id ? selectedFeature?.feature.id || 'selected' : 'none'}-${JSON.stringify(layer.style)}`}
+                  data={layer.nonPointData}
+                  style={getFeatureStyle}
+                  onEachFeature={handleFeatureClick}
+                />
+              )}
+
+              {/* Render point geometries with clustering for large datasets */}
+              {layer.pointData.features.length > 0 && (
+                <>
+                  {layer.shouldCluster ? (
+                    <MarkerClusterGroup
+                      key={`${layer.id}-points-clustered`}
+                      chunkedLoading
+                      showCoverageOnHover={false}
+                    >
+                      <GeoJSON
+                        data={layer.pointData}
+                        pointToLayer={pointToLayer}
+                        onEachFeature={handleFeatureClick}
+                      />
+                    </MarkerClusterGroup>
+                  ) : (
+                    <GeoJSON
+                      key={`${layer.id}-points-${filterCriteria.searchText}-${JSON.stringify(layer.style)}-${selectedFeature?.layerId === layer.id ? selectedFeature?.feature.id || 'selected' : 'none'}`}
+                      data={layer.pointData}
+                      pointToLayer={pointToLayer}
+                      onEachFeature={handleFeatureClick}
+                    />
+                  )}
+                </>
+              )}
+            </>
+          )
+        })}
 
         {/* Measurement Layer */}
         <MeasurementLayer />
       </LeafletMap>
-
-      {/* Measurement Controls (outside map but positioned absolutely) */}
-      <MeasurementControl />
-      <MeasurementResults />
     </div>
   )
 }

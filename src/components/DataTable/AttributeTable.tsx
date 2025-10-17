@@ -25,39 +25,44 @@ export function AttributeTable() {
   const properties = Object.keys(layer.data.features[0]?.properties || {})
 
   return (
-    <div className="overflow-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 sticky top-0">
-          <tr>
-            <th className="px-3 py-2 text-left font-medium text-gray-700">#</th>
-            {properties.map((prop) => (
-              <th
-                key={prop}
-                className="px-3 py-2 text-left font-medium text-gray-700"
-              >
-                {prop}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {layer.data.features.slice(0, 100).map((feature, index) => (
-            <tr key={index} className="border-b hover:bg-gray-50">
-              <td className="px-3 py-2 text-gray-500">{index + 1}</td>
-              {properties.map((prop) => (
-                <td key={prop} className="px-3 py-2">
-                  {String(feature.properties?.[prop] || '')}
-                </td>
-              ))}
-            </tr>
+    <div className="h-full flex flex-col">
+      {/* Table Header */}
+      <div className="bg-gray-50 border-b sticky top-0 z-10">
+        <div className="flex text-sm">
+          <div className="px-3 py-2 font-medium text-gray-700 w-16 flex-shrink-0">
+            #
+          </div>
+          {properties.map((prop) => (
+            <div
+              key={prop}
+              className="px-3 py-2 font-medium text-gray-700 flex-1 min-w-[120px]"
+            >
+              {prop}
+            </div>
           ))}
-        </tbody>
-      </table>
-      {layer.data.features.length > 100 && (
-        <div className="text-center py-4 text-sm text-gray-500">
-          Showing 100 of {layer.data.features.length} features
         </div>
-      )}
+      </div>
+
+      {/* Table Body */}
+      <div className="flex-1 overflow-auto text-sm">
+        <div>
+          {layer.data.features.map((feature, index) => (
+            <div
+              key={index}
+              className="flex border-b hover:bg-gray-50"
+            >
+              <div className="px-3 py-2 text-gray-500 w-16 flex-shrink-0">
+                {index + 1}
+              </div>
+              {properties.map((prop) => (
+                <div key={prop} className="px-3 py-2 flex-1 min-w-[120px] truncate">
+                  {String(feature.properties?.[prop] || '')}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

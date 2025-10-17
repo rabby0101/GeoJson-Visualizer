@@ -1,4 +1,4 @@
-import { Feature, FeatureCollection } from 'geojson'
+import { FeatureCollection } from 'geojson'
 import Papa from 'papaparse'
 
 export interface CSVOptions {
@@ -51,9 +51,12 @@ export class CSVExporter {
           const [lng, lat] = feature.geometry.coordinates as [number, number]
           row['longitude'] = lng
           row['latitude'] = lat
-        } else {
-          // For complex geometries, store as WKT or JSON
+        } else if (feature.geometry.type !== 'GeometryCollection') {
+          // For complex geometries with coordinates, store as JSON
           row['geometry'] = JSON.stringify(feature.geometry.coordinates)
+        } else {
+          // For GeometryCollection, store the entire geometry
+          row['geometry'] = JSON.stringify(feature.geometry)
         }
       }
 

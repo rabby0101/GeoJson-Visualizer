@@ -57,6 +57,7 @@ export function FeatureList({ layerId, features }: FeatureListProps) {
     )
   }
 
+
   return (
     <div className="divide-y divide-gray-200">
       {/* Results Count */}
@@ -70,47 +71,47 @@ export function FeatureList({ layerId, features }: FeatureListProps) {
       {/* Feature Items */}
       <div className="max-h-96 overflow-y-auto">
         {filteredFeatures.map((feature, index) => {
-          const isSelected =
-            selectedFeature?.layerId === layerId &&
-            selectedFeature?.feature === feature
+            const isSelected =
+              selectedFeature?.layerId === layerId &&
+              selectedFeature?.feature === feature
 
-          return (
-            <button
-              key={index}
-              onClick={() => flyToFeature(feature, layerId)}
-              className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-l-4 ${
-                isSelected
-                  ? 'bg-blue-50 border-l-blue-600'
-                  : 'border-l-transparent'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`mt-0.5 ${
-                    isSelected ? 'text-blue-600' : 'text-gray-400'
-                  }`}
-                >
-                  {getGeometryIcon(feature.geometry?.type || '')}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 truncate">
-                    {getFeatureLabel(feature, index)}
+            return (
+              <button
+                key={index}
+                onClick={() => flyToFeature(feature, layerId)}
+                className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-l-4 ${
+                  isSelected
+                    ? 'bg-blue-50 border-l-blue-600'
+                    : 'border-l-transparent'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`mt-0.5 ${
+                      isSelected ? 'text-blue-600' : 'text-gray-400'
+                    }`}
+                  >
+                    {getGeometryIcon(feature.geometry?.type || '')}
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
-                      {feature.geometry?.type}
-                    </span>
-                    {feature.properties && (
-                      <span className="text-xs text-gray-500">
-                        {Object.keys(feature.properties).length} properties
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900 truncate">
+                      {getFeatureLabel(feature, index)}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+                        {feature.geometry?.type}
                       </span>
-                    )}
+                      {feature.properties && (
+                        <span className="text-xs text-gray-500">
+                          {Object.keys(feature.properties).length} properties
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </button>
-          )
-        })}
+              </button>
+            )
+          })}
       </div>
     </div>
   )

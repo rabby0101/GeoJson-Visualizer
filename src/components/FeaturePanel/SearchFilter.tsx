@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useGeoJSONStore } from '@/store/geojson-store'
+import { useDebounce } from '@/hooks/useDebounce'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
@@ -22,11 +23,27 @@ export function SearchFilter({ features }: SearchFilterProps) {
     value: '',
   })
 
+  // Local state for immediate UI updates
+  const [searchText, setSearchText] = useState(filterCriteria.searchText)
+
+  // Debounce the search text to avoid excessive filtering
+  const debouncedSearchText = useDebounce(searchText, 300)
+
   const geometryTypes = getUniqueGeometryTypes(features)
   const propertyNames = getUniquePropertyNames(features)
 
+  // Update filter criteria when debounced value changes
+  useEffect(() => {
+    setFilterCriteria({ searchText: debouncedSearchText })
+  }, [debouncedSearchText, setFilterCriteria])
+
+  // Sync local state when external filter criteria changes (e.g., reset)
+  useEffect(() => {
+    setSearchText(filterCriteria.searchText)
+  }, [filterCriteria.searchText])
+
   const handleSearchChange = (value: string) => {
-    setFilterCriteria({ searchText: value })
+    setSearchText(value)
   }
 
   const handleGeometryTypeToggle = (type: string, checked: boolean) => {
@@ -79,11 +96,11 @@ export function SearchFilter({ features }: SearchFilterProps) {
           <Input
             type="text"
             placeholder="Search in properties..."
-            value={filterCriteria.searchText}
+            value={searchText}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pr-8"
           />
-          {filterCriteria.searchText && (
+          {searchText && (
             <button
               onClick={() => handleSearchChange('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"

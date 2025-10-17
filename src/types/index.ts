@@ -63,12 +63,27 @@ export interface Layer {
 }
 
 export interface LayerStyle {
+  // Polygon and LineString styling
   color?: string
   fillColor?: string
   fillOpacity?: number
   weight?: number
   opacity?: number
   dashArray?: string
+
+  // Marker (Point/MultiPoint) styling
+  markerType?: 'circle' | 'icon' | 'divIcon'
+  markerRadius?: number
+  markerColor?: string
+  markerFillColor?: string
+  markerFillOpacity?: number
+  markerWeight?: number
+  markerOpacity?: number
+  markerIconUrl?: string
+  markerIconSize?: [number, number]
+  markerIconAnchor?: [number, number]
+  markerHtml?: string
+  markerClassName?: string
 }
 
 // Analysis types
