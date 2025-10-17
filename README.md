@@ -56,7 +56,8 @@ src/
 For comprehensive documentation, see [claude.md](./claude.md)
 
 ## Demo
-![ScreenRecording2025-10-17at18 00 40-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/3a9798fd-c7ef-4fcd-b31d-71daa9e5a737)
+
+![ScreenRecording2025-10-17at18 00 40-ezgif com-optimize](https://github.com/user-attachments/assets/a56f0f52-53d0-4da6-a8e3-8b8ece6f2e93)
 
 
 
