@@ -1,0 +1,72 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Central Park",
+        "type": "Park",
+        "area": "341 hectares"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.9812, 40.7681],
+            [-73.9581, 40.7681],
+            [-73.9581, 40.8007],
+            [-73.9812, 40.8007],
+            [-73.9812, 40.7681]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Times Square",
+        "type": "Landmark"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.9855, 40.7580]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Broadway",
+        "type": "Street"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.9896, 40.7489],
+          [-73.9855, 40.7580],
+          [-73.9838, 40.7614],
+          [-73.9815, 40.7644]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hudson River Park",
+        "type": "Waterfront",
+        "length": "7.6 km"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-74.0180, 40.7002],
+            [-74.0110, 40.7002],
+            [-74.0110, 40.7750],
+            [-74.0180, 40.7750],
+            [-74.0180, 40.7002]
+          ]
+        ]
+      }
+    }
+  ]
+}
